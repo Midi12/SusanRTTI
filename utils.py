@@ -3,7 +3,7 @@ import idaapi
 from idc import *
 from idc_bc695 import *
 
-from idaapi import get_segm_by_name, hasRef, getFlags, opinfo_t, refinfo_t,\
+from idaapi import get_segm_by_name, f_has_xref, get_full_flags, opinfo_t, refinfo_t,\
 get_32bit, get_64bit, get_imagebase, get_byte
 import idautils
 from idautils import DataRefsTo
@@ -29,18 +29,18 @@ class utils(object):
         self.rdata = get_segm_by_name(".rdata")
         # try to use rdata if there actually is an rdata segment, otherwise just use data
         if self.rdata is not None:
-            self.valid_ranges = [(self.rdata.startEA, self.rdata.endEA), (self.data.startEA, self.data.endEA)]
+            self.valid_ranges = [(self.rdata.start_ea, self.rdata.end_ea), (self.data.start_ea, self.data.end_ea)]
         else:
-            self.valid_ranges = [(self.data.startEA, self.data.endEA)]
+            self.valid_ranges = [(self.data.start_ea, self.data.end_ea)]
 
         self.x64 = (idaapi.getseg(here()).bitness == 2)
         if self.x64:
-            self.PTR_TYPE = FF_QWRD
+            self.PTR_TYPE = FF_QWORD
             self.REF_OFF = REF_OFF64
             self.PTR_SIZE = 8
             self.get_ptr = get_64bit
         else:
-            self.PTR_TYPE = FF_DWRD
+            self.PTR_TYPE = FF_DWORD
             self.REF_OFF = REF_OFF32
             self.PTR_SIZE = 4
             self.get_ptr = get_32bit
@@ -89,7 +89,7 @@ class utils(object):
     def isVtable(self, addr):
         function = self.get_ptr(addr)
         # Check if vtable has ref and its first pointer lies within code segment
-        if hasRef(getFlags(addr)) and function >= self.text.startEA and function <= self.text.endEA:
+        if f_has_xref(get_full_flags(addr)) and function >= self.text.start_ea and function <= self.text.end_ea:
             return True
         return False
 
@@ -114,7 +114,7 @@ class utils(object):
       if len(lrefs) > 1 and not allow_many:
           print("too many xrefs to %08X" % addr)
           return []
-      lrefs = [r for r in lrefs if not isCode(GetFlags(r))]
+      lrefs = [r for r in lrefs if not isCode(get_full_flags(r))]
       return lrefs
 
     def find_string(self, s, afrom=0):
@@ -126,19 +126,19 @@ class utils(object):
 
     def ForceDword(self, ea):
       if ea != BADADDR and ea != 0:
-        if not isDwrd(GetFlags(ea)):
+        if not isDwrd(get_full_flags(ea)):
           MakeUnknown(ea, 4, DOUNK_SIMPLE)
           MakeDword(ea)
-        if isOff0(GetFlags(ea)) and GetFixupTgtType(ea) == -1:
+        if isOff0(get_full_flags(ea)) and GetFixupTgtType(ea) == -1:
           # remove the offset
           OpHex(ea, 0)
 
     def ForceQword(self, ea):
       if ea != BADADDR and ea != 0:
-        if not isQwrd(GetFlags(ea)):
+        if not isQwrd(get_full_flags(ea)):
           MakeUnknown(ea, 8, DOUNK_SIMPLE)
           MakeQword(ea)
-        if isOff0(GetFlags(ea)) and GetFixupTgtType(ea) == -1:
+        if isOff0(get_full_flags(ea)) and GetFixupTgtType(ea) == -1:
           # remove the offset
           OpHex(ea, 0)
 
@@ -147,7 +147,7 @@ class utils(object):
         self.ForceQword(ea)
       else:
         self.ForceDword(ea)
-      if GetFixupTgtType(ea) != -1 and isOff0(GetFlags(ea)):
+      if GetFixupTgtType(ea) != -1 and isOff0(get_full_flags(ea)):
         # don't touch fixups
         return
       pv = self.get_ptr(ea)
@@ -183,7 +183,7 @@ class utils(object):
       return ea
 
     def force_name(self, ea, name):
-      if isTail(GetFlags(ea)):
+      if isTail(get_full_flags(ea)):
         MakeUnknown(ea, 1, DOUNK_SIMPLE)
       MakeNameEx(ea, name, SN_NOWARN)
 
@@ -207,7 +207,7 @@ class utils(object):
         if len(lrefs) > 1 and not allow_many:
             print("too many xrefs to %08X" % addr)
             return []
-        lrefs = [r for r in lrefs if not isCode(GetFlags(r))]
+        lrefs = [r for r in lrefs if not isCode(get_full_flags(r))]
         return lrefs
 
     def num2key(self, all_classes):

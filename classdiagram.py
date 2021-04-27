@@ -1,4 +1,4 @@
-from idaapi import GraphViewer, askfile_c
+from idaapi import GraphViewer, ask_file
 
 # The  below will only be displayed as bases
 ignore_namespaces = ("std", "type_info")
@@ -75,7 +75,7 @@ class ClassDiagram(GraphViewer):
     # dot file export modified from http://joxeankoret.com
     def OnCommand(self, cmd_id):
         if self.cmd_dot == cmd_id:
-            fname = askfile_c(1, "*.dot", "Export DOT file")
+            fname = ask_file(1, "*.dot", "Export DOT file")
             if fname:
                 f = open(fname, "wb")
                 buf = "digraph G {\n graph [overlap=scale]; node [fontname=Courier]; rankdir=\"LR\";\n\n"

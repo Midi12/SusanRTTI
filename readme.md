@@ -1,6 +1,8 @@
 # SusanRTTI #
 #### Another RTTI Parsing IDA plugin ####
 
+Fork for IDA 7.3+ support
+
 ### Features ###
 * All ida-python
 * Class based design, error logging
